@@ -67,7 +67,7 @@ export function DashboardNav({
             <Trees className="w-6 h-6 text-white" />
           </div>
           <div>
-            <div className="text-lg text-[#2D5A27] font-semibold">Zoo Management</div>
+            <div className="text-lg text-[#2D5A27] font-semibold">Zesty</div>
             <div className="text-xs text-slate-500">Maintenance & Operations</div>
           </div>
         </div>

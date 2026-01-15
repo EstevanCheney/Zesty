@@ -223,9 +223,9 @@ export function SubmitReportForm() {
                 <SelectItem value="Main Entrance - Ticketing">Entrée Principale - Billetterie</SelectItem>
                 <SelectItem value="Small Farm">Petite Ferme</SelectItem>
                 <SelectItem value="Giraffe Habitat">Enclos des Girafes</SelectItem>
-                <SelectItem value="Food Kiosk - Crepes">Kiosque Crêpes</SelectItem>
+                <SelectItem value="Food Kiosk - Crepes">Enclos des Ours</SelectItem>
                 <SelectItem value="African Savanna">Savane Africaine</SelectItem>
-                <SelectItem value="Big Aviary">Grande Volière</SelectItem>
+                <SelectItem value="Big Aviary">Volière</SelectItem>
                 <SelectItem value="Restrooms">Toilettes</SelectItem>
               </SelectContent>
             </Select>
