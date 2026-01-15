@@ -25,13 +25,13 @@ interface AllIncidentsPageProps {
   onMessagesClick: () => void;
 }
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   High: "bg-red-100 text-red-700 border-red-300",
   Med: "bg-amber-100 text-amber-700 border-amber-300",
   Low: "bg-blue-100 text-blue-700 border-blue-300"
 };
 
-const categoryColors = {
+const categoryColors: Record<string, string> = {
   Safety: "bg-red-50 text-red-700",
   Cleaning: "bg-blue-50 text-blue-700",
   Repair: "bg-orange-50 text-orange-700"
@@ -52,11 +52,17 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
         console.error('Erreur chargement incidents:', error);
       } else {
         const formattedData = data.map((item: any) => ({
-          ...item,
+          id: item.id,
+          location: item.location,
+          category: item.category || "Repair",
+          priority: item.priority || "Low",
+          description: item.description,
+          status: item.status,
+          // TRADUCTION OBLIGATOIRE ICI AUSSI
           timestamp: new Date(item.created_at).toLocaleDateString(),
           image: item.image_url || "https://placehold.co/600x400?text=No+Image",
-          priority: item.priority || "Low",
-          category: item.category || "Repair"
+          reportedBy: item.reported_by || "Staff",
+          detailedDescription: item.detailed_description || item.description
         }));
         setIncidents(formattedData);
       }
@@ -71,43 +77,31 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
       <DashboardNav onMessagesClick={onMessagesClick} />
       
       <div className="p-6">
-        {/* Back Button */}
         <Button
           onClick={onBack}
           variant="ghost"
           className="mb-6 text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          Retour au Dashboard
         </Button>
 
-        {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-slate-900 mb-2">All Incidents</h1>
-          <p className="text-slate-600">
-            Complete history of all maintenance reports and issues (Live Database)
-          </p>
+          <h1 className="text-slate-900 mb-2">Tous les Incidents</h1>
+          <p className="text-slate-600">Historique complet des signalements</p>
         </div>
 
-        {/* Incidents Grid */}
         <div className="max-w-6xl mx-auto">
           {loading ? (
-            <div className="text-center py-12 text-slate-500">Chargement des données...</div>
+            <div className="text-center py-12 text-slate-500">Chargement...</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {incidents.length === 0 && (
-                <div className="col-span-full text-center py-10 text-slate-500">
-                  Aucun incident trouvé dans la base de données.
-                </div>
-              )}
-              
               {incidents.map((incident) => (
                 <div
                   key={incident.id}
                   onClick={() => onIncidentClick(incident)}
                   className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                 >
-                  {/* Image */}
                   <div className="relative w-full h-48 bg-slate-100">
                     <ImageWithFallback
                       src={incident.image}
@@ -117,13 +111,12 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
                     {incident.status === "Resolved" && (
                       <div className="absolute top-3 right-3">
                         <Badge className="bg-green-100 text-green-700 border-green-300 border">
-                          Resolved
+                          Résolu
                         </Badge>
                       </div>
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h4 className="text-slate-900 font-medium line-clamp-1">{incident.location}</h4>
