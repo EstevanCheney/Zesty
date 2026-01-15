@@ -36,18 +36,13 @@ export function SubmitReportForm() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      setSelectedFile(files[0]);
-    }
+    if (files.length > 0) setSelectedFile(files[0]);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      setSelectedFile(files[0]);
-    }
+    if (files && files.length > 0) setSelectedFile(files[0]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,19 +115,19 @@ export function SubmitReportForm() {
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-6 h-full">
-      <h3 className="text-slate-800 mb-4">Submit New Report</h3>
+      <h3 className="text-slate-800 mb-4 font-semibold text-lg">Signaler un Incident</h3>
       
       {isSubmitted ? (
         <div className="flex flex-col items-center justify-center py-12">
           <CheckCircle className="w-16 h-16 text-[#2D5A27] mb-4" />
-          <p className="text-lg text-slate-800 font-medium">Report Submitted!</p>
-          <p className="text-sm text-slate-600 mt-2">Your maintenance request has been logged into the database.</p>
+          <p className="text-lg text-slate-800 font-medium">Rapport Envoyé !</p>
+          <p className="text-sm text-slate-600 mt-2">Votre demande de maintenance a été enregistrée.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Photo Upload */}
           <div className="space-y-2">
-            <Label className="text-slate-700">Photo Upload</Label>
+            <Label className="text-slate-700">Ajouter une photo</Label>
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -165,7 +160,7 @@ export function SubmitReportForm() {
                 <div>
                   <Upload className="w-10 h-10 text-slate-400 mx-auto mb-2" />
                   <p className="text-sm text-slate-600 mb-1">
-                    Drag & drop photo here, or click to browse
+                    Glissez une image ici ou cliquez pour parcourir
                   </p>
                   <input
                     type="file"
@@ -178,7 +173,7 @@ export function SubmitReportForm() {
                     htmlFor="file-upload"
                     className="text-sm text-[#2D5A27] cursor-pointer hover:underline"
                   >
-                    Browse files
+                    Parcourir les fichiers
                   </label>
                 </div>
               )}
@@ -186,70 +181,62 @@ export function SubmitReportForm() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Category Dropdown */}
+            {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-slate-700">
-                Category
-              </Label>
+              <Label htmlFor="category" className="text-slate-700">Catégorie</Label>
               <Select value={category} onValueChange={setCategory} required>
                 <SelectTrigger id="category" className="border-slate-300">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Choisir une catégorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Safety">Safety</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning</SelectItem>
-                  <SelectItem value="Repair">Repair</SelectItem>
+                  <SelectItem value="Safety">Sécurité</SelectItem>
+                  <SelectItem value="Cleaning">Nettoyage</SelectItem>
+                  <SelectItem value="Repair">Réparation</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-             {/* Priority Dropdown (Nouveau champ pour matcher la DB) */}
+             {/* Priority */}
              <div className="space-y-2">
-              <Label htmlFor="priority" className="text-slate-700">
-                Priority
-              </Label>
+              <Label htmlFor="priority" className="text-slate-700">Priorité</Label>
               <Select value={priority} onValueChange={setPriority} required>
                 <SelectTrigger id="priority" className="border-slate-300">
-                  <SelectValue placeholder="Select priority" />
+                  <SelectValue placeholder="Choisir la priorité" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Med">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="High">Haute</SelectItem>
+                  <SelectItem value="Med">Moyenne</SelectItem>
+                  <SelectItem value="Low">Basse</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Location Dropdown */}
+          {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location" className="text-slate-700">
-              Location
-            </Label>
+            <Label htmlFor="location" className="text-slate-700">Lieu</Label>
             <Select value={location} onValueChange={setLocation} required>
               <SelectTrigger id="location" className="border-slate-300">
-                <SelectValue placeholder="Select location" />
+                <SelectValue placeholder="Choisir un lieu" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Main Entrance - Ticketing">Main Entrance - Ticketing</SelectItem>
-                <SelectItem value="Small Farm">Small Farm</SelectItem>
-                <SelectItem value="Giraffe Habitat">Giraffe Habitat</SelectItem>
-                <SelectItem value="Food Kiosk - Crepes">Food Kiosk - Crepes</SelectItem>
-                <SelectItem value="African Savanna">African Savanna</SelectItem>
-                <SelectItem value="Big Aviary">Big Aviary</SelectItem>
-                <SelectItem value="Restrooms">Restrooms</SelectItem>
+                <SelectItem value="Main Entrance - Ticketing">Entrée Principale - Billetterie</SelectItem>
+                <SelectItem value="Small Farm">Petite Ferme</SelectItem>
+                <SelectItem value="Giraffe Habitat">Enclos des Girafes</SelectItem>
+                <SelectItem value="Food Kiosk - Crepes">Kiosque Crêpes</SelectItem>
+                <SelectItem value="African Savanna">Savane Africaine</SelectItem>
+                <SelectItem value="Big Aviary">Grande Volière</SelectItem>
+                <SelectItem value="Restrooms">Toilettes</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-slate-700">
-              Description
-            </Label>
+            <Label htmlFor="description" className="text-slate-700">Description</Label>
             <Textarea
               id="description"
-              placeholder="Describe the issue in detail..."
+              placeholder="Décrivez le problème en détail..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
@@ -267,10 +254,10 @@ export function SubmitReportForm() {
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
+                Envoi en cours...
               </>
             ) : (
-              "Submit Report"
+              "Envoyer le rapport"
             )}
           </Button>
         </form>
