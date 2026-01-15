@@ -9,7 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Upload, X, CheckCircle } from "lucide-react";
+import { Upload, X, CheckCircle, Loader2 } from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
 export function SubmitReportForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -17,6 +19,9 @@ export function SubmitReportForm() {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Low");
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -45,18 +50,72 @@ export function SubmitReportForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
     
-    // Reset form after 2 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setSelectedFile(null);
-      setCategory("");
-      setLocation("");
-      setDescription("");
-    }, 2000);
+    if (!category || !location || !description) {
+      toast.error("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      let imageUrl = null;
+
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('incident-images')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('incident-images')
+          .getPublicUrl(filePath);
+          
+        imageUrl = urlData.publicUrl;
+      }
+
+      const { error: insertError } = await supabase
+        .from('incidents')
+        .insert([
+          {
+            category,
+            location,
+            description,
+            priority,
+            image_url: imageUrl,
+            status: 'Under Review',
+            reported_by: 'Staff Member',
+            created_at: new Date().toISOString(),
+          },
+        ]);
+
+      if (insertError) throw insertError;
+
+      setIsSubmitted(true);
+      toast.success("Incident signalé avec succès !");
+      
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setSelectedFile(null);
+        setCategory("");
+        setLocation("");
+        setDescription("");
+        setPriority("Low");
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      toast.error("Erreur lors de l'envoi : " + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -67,7 +126,7 @@ export function SubmitReportForm() {
         <div className="flex flex-col items-center justify-center py-12">
           <CheckCircle className="w-16 h-16 text-[#2D5A27] mb-4" />
           <p className="text-lg text-slate-800 font-medium">Report Submitted!</p>
-          <p className="text-sm text-slate-600 mt-2">Your maintenance request has been logged.</p>
+          <p className="text-sm text-slate-600 mt-2">Your maintenance request has been logged into the database.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -126,21 +185,40 @@ export function SubmitReportForm() {
             </div>
           </div>
 
-          {/* Category Dropdown */}
-          <div className="space-y-2">
-            <Label htmlFor="category" className="text-slate-700">
-              Category
-            </Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger id="category" className="border-slate-300">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="safety">Safety</SelectItem>
-                <SelectItem value="cleaning">Cleaning</SelectItem>
-                <SelectItem value="repair">Repair</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Category Dropdown */}
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-slate-700">
+                Category
+              </Label>
+              <Select value={category} onValueChange={setCategory} required>
+                <SelectTrigger id="category" className="border-slate-300">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Safety">Safety</SelectItem>
+                  <SelectItem value="Cleaning">Cleaning</SelectItem>
+                  <SelectItem value="Repair">Repair</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+             {/* Priority Dropdown (Nouveau champ pour matcher la DB) */}
+             <div className="space-y-2">
+              <Label htmlFor="priority" className="text-slate-700">
+                Priority
+              </Label>
+              <Select value={priority} onValueChange={setPriority} required>
+                <SelectTrigger id="priority" className="border-slate-300">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Med">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Location Dropdown */}
@@ -153,19 +231,13 @@ export function SubmitReportForm() {
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="main-entrance">Main Entrance - Ticketing</SelectItem>
-                <SelectItem value="small-farm">Small Farm</SelectItem>
-                <SelectItem value="giraffe-habitat">Giraffe Habitat</SelectItem>
-                <SelectItem value="food-kiosk-crepes">Food Kiosk - Crepes</SelectItem>
-                <SelectItem value="african-savanna">African Savanna</SelectItem>
-                <SelectItem value="big-aviary">Big Aviary</SelectItem>
-                <SelectItem value="bactrian-camels">Bactrian Camels</SelectItem>
-                <SelectItem value="arctic-area">Arctic Area - Polar Bears</SelectItem>
-                <SelectItem value="little-amazonia">Little Amazonia</SelectItem>
-                <SelectItem value="felines">Felines - Panthers & Leopards</SelectItem>
-                <SelectItem value="lemurs">Lemurs & Primates</SelectItem>
-                <SelectItem value="picnic-area">Picnic Area</SelectItem>
-                <SelectItem value="toilets">Restrooms</SelectItem>
+                <SelectItem value="Main Entrance - Ticketing">Main Entrance - Ticketing</SelectItem>
+                <SelectItem value="Small Farm">Small Farm</SelectItem>
+                <SelectItem value="Giraffe Habitat">Giraffe Habitat</SelectItem>
+                <SelectItem value="Food Kiosk - Crepes">Food Kiosk - Crepes</SelectItem>
+                <SelectItem value="African Savanna">African Savanna</SelectItem>
+                <SelectItem value="Big Aviary">Big Aviary</SelectItem>
+                <SelectItem value="Restrooms">Restrooms</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -189,9 +261,17 @@ export function SubmitReportForm() {
           {/* Submit Button */}
           <Button
             type="submit"
+            disabled={isSubmitting}
             className="w-full bg-[#2D5A27] hover:bg-[#1f3f1c] text-white"
           >
-            Submit Report
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Report"
+            )}
           </Button>
         </form>
       )}

@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ArrowLeft } from "lucide-react";
 import { DashboardNav } from "./DashboardNav";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { allIncidents } from "./IncidentFeed";
+import { supabase } from "../lib/supabase";
 
 interface Incident {
   id: string;
@@ -37,6 +38,34 @@ const categoryColors = {
 };
 
 export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: AllIncidentsPageProps) {
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchIncidents() {
+      const { data, error } = await supabase
+        .from('incidents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur chargement incidents:', error);
+      } else {
+        const formattedData = data.map((item: any) => ({
+          ...item,
+          timestamp: new Date(item.created_at).toLocaleDateString(),
+          image: item.image_url || "https://placehold.co/600x400?text=No+Image",
+          priority: item.priority || "Low",
+          category: item.category || "Repair"
+        }));
+        setIncidents(formattedData);
+      }
+      setLoading(false);
+    }
+
+    fetchIncidents();
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <DashboardNav onMessagesClick={onMessagesClick} />
@@ -56,56 +85,66 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
         <div className="mb-6">
           <h1 className="text-slate-900 mb-2">All Incidents</h1>
           <p className="text-slate-600">
-            Complete history of all maintenance reports and issues
+            Complete history of all maintenance reports and issues (Live Database)
           </p>
         </div>
 
         {/* Incidents Grid */}
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allIncidents.map((incident) => (
-              <div
-                key={incident.id}
-                onClick={() => onIncidentClick(incident)}
-                className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-              >
-                {/* Image */}
-                <div className="relative w-full h-48 bg-slate-100">
-                  <ImageWithFallback
-                    src={incident.image}
-                    alt={incident.location}
-                    className="w-full h-full object-cover"
-                  />
-                  {incident.status === "Resolved" && (
-                    <div className="absolute top-3 right-3">
-                      <Badge className="bg-green-100 text-green-700 border-green-300 border">
-                        Resolved
+          {loading ? (
+            <div className="text-center py-12 text-slate-500">Chargement des données...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {incidents.length === 0 && (
+                <div className="col-span-full text-center py-10 text-slate-500">
+                  Aucun incident trouvé dans la base de données.
+                </div>
+              )}
+              
+              {incidents.map((incident) => (
+                <div
+                  key={incident.id}
+                  onClick={() => onIncidentClick(incident)}
+                  className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  {/* Image */}
+                  <div className="relative w-full h-48 bg-slate-100">
+                    <ImageWithFallback
+                      src={incident.image}
+                      alt={incident.location}
+                      className="w-full h-full object-cover"
+                    />
+                    {incident.status === "Resolved" && (
+                      <div className="absolute top-3 right-3">
+                        <Badge className="bg-green-100 text-green-700 border-green-300 border">
+                          Resolved
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h4 className="text-slate-900 font-medium line-clamp-1">{incident.location}</h4>
+                      <Badge className={`${priorityColors[incident.priority] || 'bg-slate-100'} border flex-shrink-0`}>
+                        {incident.priority}
                       </Badge>
                     </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="text-slate-900 font-medium line-clamp-1">{incident.location}</h4>
-                    <Badge className={`${priorityColors[incident.priority]} border flex-shrink-0`}>
-                      {incident.priority}
-                    </Badge>
+                    
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="secondary" className={categoryColors[incident.category] || 'bg-slate-100'}>
+                        {incident.category}
+                      </Badge>
+                      <span className="text-xs text-slate-500">{incident.timestamp}</span>
+                    </div>
+                    
+                    <p className="text-sm text-slate-600 line-clamp-2">{incident.description}</p>
                   </div>
-                  
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="secondary" className={categoryColors[incident.category]}>
-                      {incident.category}
-                    </Badge>
-                    <span className="text-xs text-slate-500">{incident.timestamp}</span>
-                  </div>
-                  
-                  <p className="text-sm text-slate-600 line-clamp-2">{incident.description}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

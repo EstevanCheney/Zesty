@@ -1,225 +1,153 @@
-import { useState } from "react";
-import { X, Send, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Send, Search, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
-interface Colleague {
+interface Profile {
   id: string;
-  name: string;
-  initials: string;
+  full_name: string;
   role: string;
   department: string;
 }
 
-const mockColleagues: Colleague[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    initials: "SJ",
-    role: "Senior Maintenance Supervisor",
-    department: "Maintenance",
-  },
-  {
-    id: "2",
-    name: "Mike Chen",
-    initials: "MC",
-    role: "Operations Manager",
-    department: "Operations",
-  },
-  {
-    id: "3",
-    name: "Emma Davis",
-    initials: "ED",
-    role: "Facilities Coordinator",
-    department: "Facilities",
-  },
-  {
-    id: "4",
-    name: "James Wilson",
-    initials: "JW",
-    role: "Team Lead",
-    department: "Maintenance",
-  },
-  {
-    id: "5",
-    name: "Lisa Martinez",
-    initials: "LM",
-    role: "Safety Inspector",
-    department: "Safety & Compliance",
-  },
-  {
-    id: "6",
-    name: "David Brown",
-    initials: "DB",
-    role: "Maintenance Technician",
-    department: "Maintenance",
-  },
-  {
-    id: "7",
-    name: "Rachel Green",
-    initials: "RG",
-    role: "Cleaning Supervisor",
-    department: "Facilities",
-  },
-  {
-    id: "8",
-    name: "Tom Anderson",
-    initials: "TA",
-    role: "Equipment Manager",
-    department: "Operations",
-  },
-];
-
-interface NewMessageDialogProps {
-  onClose: () => void;
-}
-
-export function NewMessageDialog({ onClose }: NewMessageDialogProps) {
+export function NewMessageDialog({ onClose }: { onClose: () => void }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedColleague, setSelectedColleague] = useState<Colleague | null>(null);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [selectedColleague, setSelectedColleague] = useState<Profile | null>(null);
   const [messageText, setMessageText] = useState("");
-  const [showResults, setShowResults] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
 
-  const filteredColleagues = mockColleagues.filter(
-    (colleague) =>
-      colleague.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      colleague.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      colleague.role.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    async function fetchProfiles() {
+      const { data } = await supabase.from('profiles').select('*');
+      if (data) setProfiles(data);
+      setLoadingProfiles(false);
+    }
+    fetchProfiles();
+  }, []);
+
+  const filteredColleagues = profiles.filter((p) =>
+    p.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleColleagueSelect = (colleague: Colleague) => {
-    setSelectedColleague(colleague);
-    setSearchQuery(colleague.name);
-    setShowResults(false);
-  };
+  const handleSendMessage = async () => {
+    if (!selectedColleague || !messageText.trim()) return;
+    setSending(true);
 
-  const handleSendMessage = () => {
-    if (selectedColleague && messageText.trim()) {
-      // In a real app, this would send the message
-      console.log("Sending message to:", selectedColleague.name, "Message:", messageText);
-      // Close the dialog after sending
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non connecté");
+
+      const { error } = await supabase.from('messages').insert({
+        content: messageText,
+        sender_id: user.id,
+        receiver_id: selectedColleague.id,
+      });
+
+      if (error) throw error;
+      
+      toast.success("Message envoyé !");
       onClose();
+    } catch (error) {
+      toast.error("Erreur lors de l'envoi");
+    } finally {
+      setSending(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col h-[600px]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <h2 className="text-xl text-slate-900">New Message</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4">
-          {/* To Field */}
-          <div className="space-y-2">
-            <label className="text-sm text-slate-700">To:</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search by name, role, or department..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setShowResults(true);
-                  if (!e.target.value) {
-                    setSelectedColleague(null);
-                  }
-                }}
-                onFocus={() => setShowResults(true)}
-                className="pl-10"
-              />
-
-              {/* Search Results Dropdown */}
-              {showResults && searchQuery && filteredColleagues.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-64 overflow-hidden">
-                  <ScrollArea className="max-h-64">
-                    {filteredColleagues.map((colleague) => (
-                      <button
-                        key={colleague.id}
-                        onClick={() => handleColleagueSelect(colleague)}
-                        className="w-full text-left p-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 last:border-b-0"
-                      >
-                        <Avatar className="w-10 h-10">
-                          <AvatarFallback className="bg-[#2D5A27] text-white">
-                            {colleague.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-slate-900">{colleague.name}</div>
-                          <div className="text-xs text-slate-600">{colleague.role}</div>
-                          <div className="text-xs text-slate-500">{colleague.department}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </ScrollArea>
-                </div>
-              )}
-            </div>
-
-            {/* Selected Colleague Display */}
-            {selectedColleague && !showResults && (
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-[#2D5A27] text-white">
-                    {selectedColleague.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="text-sm text-slate-900">{selectedColleague.name}</div>
-                  <div className="text-xs text-slate-600">{selectedColleague.role}</div>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedColleague(null);
-                    setSearchQuery("");
-                  }}
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        <div className="p-6 space-y-4 flex-1 overflow-hidden flex flex-col">
+          {/* Recherche Destinataire */}
+          {!selectedColleague ? (
+            <div className="flex flex-col h-full">
+              <Label className="mb-2">À qui voulez-vous écrire ?</Label>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Rechercher un collègue..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            )}
-          </div>
+              
+              <ScrollArea className="flex-1 border rounded-md p-2">
+                {loadingProfiles ? (
+                  <div className="p-4 text-center text-slate-500">Chargement...</div>
+                ) : filteredColleagues.length === 0 ? (
+                  <div className="p-4 text-center text-slate-500">Aucun collègue trouvé.</div>
+                ) : (
+                  filteredColleagues.map((colleague) => (
+                    <button
+                      key={colleague.id}
+                      onClick={() => setSelectedColleague(colleague)}
+                      className="w-full text-left p-3 hover:bg-slate-50 rounded-lg flex items-center gap-3"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-[#2D5A27] text-white">
+                          {colleague.full_name?.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{colleague.full_name}</div>
+                        <div className="text-xs text-slate-500">{colleague.role}</div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </ScrollArea>
+            </div>
+          ) : (
+            <div className="flex flex-col h-full gap-4">
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarFallback className="bg-[#2D5A27] text-white">
+                      {selectedColleague.full_name?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{selectedColleague.full_name}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedColleague(null)}>
+                  Changer
+                </Button>
+              </div>
 
-          {/* Message Field */}
-          <div className="space-y-2">
-            <label className="text-sm text-slate-700">Message:</label>
-            <Textarea
-              placeholder="Type your message here..."
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              className="min-h-[200px] resize-none"
-            />
-          </div>
+              <Textarea
+                placeholder="Écrivez votre message..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                className="flex-1 resize-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="text-slate-700"
-          >
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
             onClick={handleSendMessage}
-            disabled={!selectedColleague || !messageText.trim()}
-            className="bg-[#2D5A27] hover:bg-[#234520] text-white"
+            disabled={!selectedColleague || !messageText.trim() || sending}
+            className="bg-[#2D5A27] text-white"
           >
-            <Send className="w-4 h-4 mr-2" />
-            Send Message
+            {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Envoyer
           </Button>
         </div>
       </div>

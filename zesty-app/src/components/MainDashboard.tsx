@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
 import { InteractiveMap } from "./InteractiveMap";
 import { IncidentFeed } from "./IncidentFeed";
 import { DashboardNav } from "./DashboardNav";
+import { supabase } from "../lib/supabase";
 
 interface Incident {
   id: string;
@@ -36,6 +38,20 @@ export function MainDashboard({
   onColleagueDirectoryClick,
   onAccountSettingsClick 
 }: MainDashboardProps) {
+  const [firstName, setFirstName] = useState("");
+
+  useEffect(() => {
+    async function getName() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        const fullName = data?.full_name || "";
+        setFirstName(fullName.split(' ')[0]);
+      }
+    }
+    getName();
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <DashboardNav 
@@ -46,29 +62,31 @@ export function MainDashboard({
       />
       
       <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Header Personnalisé */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-slate-900">Facility Maintenance Overview</h1>
-            <p className="text-slate-600 mt-1">Monitor and manage zoo facility issues</p>
+            <h1 className="text-2xl text-slate-900 font-bold">
+              {firstName ? `Bonjour, ${firstName} 👋` : "Tableau de Bord"}
+            </h1>
+            <p className="text-slate-600 mt-1">Voici l'état actuel des installations du parc.</p>
           </div>
           <Button 
             onClick={onReportNewIssue}
-            className="bg-[#2D5A27] hover:bg-[#1f3f1c] text-white"
+            className="bg-[#2D5A27] hover:bg-[#1f3f1c] text-white shadow-sm"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Report New Issue
+            Signaler un incident
           </Button>
         </div>
 
-        {/* Main Content Grid */}
+        {/* Contenu Principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Interactive Map */}
+          {/* Carte Interactive */}
           <div className="lg:col-span-1">
             <InteractiveMap />
           </div>
 
-          {/* Right Column - Incident Feed */}
+          {/* Flux d'incidents */}
           <div className="lg:col-span-1">
             <IncidentFeed onIncidentClick={onIncidentClick} onViewAll={onViewAllIncidents} />
           </div>

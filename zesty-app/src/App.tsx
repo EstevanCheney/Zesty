@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabase";
 import { LoginScreen } from "./components/LoginScreen";
 import { MainDashboard } from "./components/MainDashboard";
 import { SubmitReportPage } from "./components/SubmitReportPage";
@@ -9,6 +10,7 @@ import { NewMessageDialog } from "./components/NewMessageDialog";
 import { WorkSchedule } from "./components/WorkSchedule";
 import { ColleagueDirectory } from "./components/ColleagueDirectory";
 import { AccountSettings } from "./components/accountsetting";
+
 interface Incident {
   id: string;
   image: string;
@@ -25,15 +27,27 @@ interface Incident {
 type View = "dashboard" | "submitReport" | "incidentDetail" | "allIncidents" | "workSchedule" | "colleagueDirectory" | "accountSettings";
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState<any>(null);
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [showMessaging, setShowMessaging] = useState(false);
   const [showNewMessage, setShowNewMessage] = useState(false);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = () => {};
 
   const handleReportNewIssue = () => {
     setCurrentView("submitReport");
@@ -82,26 +96,29 @@ export default function App() {
     setCurrentView("accountSettings");
   };
 
-  if (!isAuthenticated) {
+  if (!session) {
     return <LoginScreen onLogin={handleLogin} />;
   }
+
+  const renderMessaging = () => (
+    <>
+      {showMessaging && (
+        <MessagingInbox
+          onClose={handleCloseMessaging}
+          onNewMessage={handleNewMessage}
+        />
+      )}
+      {showNewMessage && (
+        <NewMessageDialog onClose={handleCloseNewMessage} />
+      )}
+    </>
+  );
 
   if (currentView === "workSchedule") {
     return (
       <>
         <WorkSchedule onBack={handleBackToDashboard} />
-
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -110,18 +127,7 @@ export default function App() {
     return (
       <>
         <ColleagueDirectory onBack={handleBackToDashboard} />
-
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -130,18 +136,7 @@ export default function App() {
     return (
       <>
         <AccountSettings onBack={handleBackToDashboard} />
-
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -150,18 +145,7 @@ export default function App() {
     return (
       <>
         <SubmitReportPage onBack={handleBackToDashboard} onMessagesClick={handleMessagesClick} />
-        
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-        
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -170,18 +154,7 @@ export default function App() {
     return (
       <>
         <IncidentDetailPage incident={selectedIncident} onBack={handleBackToDashboard} onMessagesClick={handleMessagesClick} />
-        
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-        
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -190,18 +163,7 @@ export default function App() {
     return (
       <>
         <AllIncidentsPage onBack={handleBackToDashboard} onIncidentClick={handleIncidentClick} onMessagesClick={handleMessagesClick} />
-        
-        {/* Messaging Components */}
-        {showMessaging && (
-          <MessagingInbox
-            onClose={handleCloseMessaging}
-            onNewMessage={handleNewMessage}
-          />
-        )}
-        
-        {showNewMessage && (
-          <NewMessageDialog onClose={handleCloseNewMessage} />
-        )}
+        {renderMessaging()}
       </>
     );
   }
@@ -217,18 +179,7 @@ export default function App() {
         onColleagueDirectoryClick={handleColleagueDirectoryClick}
         onAccountSettingsClick={handleAccountSettingsClick}
       />
-      
-      {/* Messaging Components */}
-      {showMessaging && (
-        <MessagingInbox
-          onClose={handleCloseMessaging}
-          onNewMessage={handleNewMessage}
-        />
-      )}
-      
-      {showNewMessage && (
-        <NewMessageDialog onClose={handleCloseNewMessage} />
-      )}
+      {renderMessaging()}
     </>
   );
 }

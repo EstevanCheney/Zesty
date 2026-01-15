@@ -7,18 +7,39 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dépendances (Ne jamais commiter node_modules !)
 node_modules
+.pnpm-store
+
+# Build (Dossiers générés par Vite)
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Fichiers Systèmes (Mac/Windows/Linux)
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editeurs de code (VS Code, JetBrains...)
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
-*.ntvs*
+*.ntvs
 *.njsproj
 *.sln
 *.sw?
+
+# Variables d'environnement (Sécurité !)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+
+# TypeScript
+*.tsbuildinfo
