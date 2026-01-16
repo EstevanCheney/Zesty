@@ -30,6 +30,16 @@ const categoryColors: Record<string, string> = {
   Repair: "bg-orange-50 text-orange-700"
 };
 
+const locationTranslations: Record<string, string> = {
+  "Main Entrance - Ticketing": "Entrée Principale",
+  "Small Farm": "Petite Ferme",
+  "Giraffe Habitat": "Enclos des Girafes",
+  "Food Kiosk - Crepes": "Enclos des Ours",
+  "African Savanna": "Savane Africaine",
+  "Big Aviary": "Volière",
+  "Restrooms": "Toilettes"
+};
+
 export function IncidentFeed({
   onIncidentClick,
   onViewAll,
@@ -53,7 +63,7 @@ export function IncidentFeed({
     } else {
       const formattedData = data.map((item: any) => ({
         id: item.id,
-        location: item.location,
+        location: locationTranslations[item.location] || item.location,
         category: item.category,
         priority: item.priority,
         description: item.description,
