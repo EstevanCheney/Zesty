@@ -37,6 +37,16 @@ const categoryColors: Record<string, string> = {
   Repair: "bg-orange-50 text-orange-700"
 };
 
+const locationTranslations: Record<string, string> = {
+  "Main Entrance - Ticketing": "Entrée Principale",
+  "Small Farm": "Petite Ferme",
+  "Giraffe Habitat": "Enclos des Girafes",
+  "Food Kiosk - Crepes": "Enclos des Ours",
+  "African Savanna": "Savane Africaine",
+  "Big Aviary": "Volière",
+  "Restrooms": "Toilettes"
+};
+
 export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: AllIncidentsPageProps) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +63,7 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
       } else {
         const formattedData = data.map((item: any) => ({
           id: item.id,
-          location: item.location,
+          location: locationTranslations[item.location] || item.location,
           category: item.category || "Repair",
           priority: item.priority || "Low",
           description: item.description,
@@ -120,13 +130,13 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h4 className="text-slate-900 font-medium line-clamp-1">{incident.location}</h4>
                       <Badge className={`${priorityColors[incident.priority] || 'bg-slate-100'} border flex-shrink-0`}>
-                        {incident.priority}
+                        {incident.priority === 'High' ? 'Haute' : incident.priority === 'Med' ? 'Moyenne' : 'Basse'}
                       </Badge>
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
                       <Badge variant="secondary" className={categoryColors[incident.category] || 'bg-slate-100'}>
-                        {incident.category}
+                        {incident.category === 'Safety' ? 'Sécurité' : incident.category === 'Cleaning' ? 'Nettoyage' : 'Réparation'}
                       </Badge>
                       <span className="text-xs text-slate-500">{incident.timestamp}</span>
                     </div>
