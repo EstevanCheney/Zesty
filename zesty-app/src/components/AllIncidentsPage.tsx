@@ -58,7 +58,6 @@ export function AllIncidentsPage({ onBack, onIncidentClick, onMessagesClick }: A
           priority: item.priority || "Low",
           description: item.description,
           status: item.status,
-          // TRADUCTION OBLIGATOIRE ICI AUSSI
           timestamp: new Date(item.created_at).toLocaleDateString(),
           image: item.image_url || "https://placehold.co/600x400?text=No+Image",
           reportedBy: item.reported_by || "Staff",

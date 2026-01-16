@@ -5,18 +5,17 @@ import { supabase } from "../lib/supabase";
 
 interface MapLocation {
   id: string;
-  name: string;    // Nom affiché à l'écran (Français)
-  dbValue: string; // Valeur exacte stockée en base de données (Anglais)
+  name: string
+  dbValue: string;
   x: number;
   y: number;
 }
 
-// Configuration des points : on fait correspondre l'affichage et la base de données
 const locations: MapLocation[] = [
   { 
     id: "1", 
     name: "Entrée Principale - Billetterie", 
-    dbValue: "Main Entrance - Ticketing", // Doit matcher le 'value' du formulaire
+    dbValue: "Main Entrance - Ticketing",
     x: 7.5, y: 69 
   },
   { 
@@ -33,8 +32,8 @@ const locations: MapLocation[] = [
   },
   { 
     id: "4", 
-    name: "Enclos des Ours", // J'ai repris le nom que tu avais mis dans le formulaire
-    dbValue: "Food Kiosk - Crepes", // Attention : C'est la valeur technique actuelle dans ton formulaire
+    name: "Enclos des Ours",
+    dbValue: "Food Kiosk - Crepes",
     x: 40, y: 75 
   },
   { 
@@ -62,14 +61,12 @@ export function InteractiveMap() {
   const [problemLocations, setProblemLocations] = useState<Set<string>>(new Set());
 
   const fetchActiveIncidents = async () => {
-    // On récupère les incidents non résolus
     const { data, error } = await supabase
       .from('incidents')
       .select('location')
       .neq('status', 'Resolved');
 
     if (data) {
-      // On stocke les lieux à problème dans un Set pour une recherche rapide
       const issues = new Set(data.map((incident) => incident.location));
       setProblemLocations(issues);
     }
@@ -78,7 +75,6 @@ export function InteractiveMap() {
   useEffect(() => {
     fetchActiveIncidents();
 
-    // Abonnement temps réel pour mise à jour automatique
     const channel = supabase
       .channel('map-updates')
       .on(
@@ -108,7 +104,6 @@ export function InteractiveMap() {
         />
 
         {locations.map((location) => {
-          // CORRECTION ICI : On vérifie si la VALEUR DB est dans la liste des problèmes
           const hasIssue = problemLocations.has(location.dbValue);
 
           return (
@@ -120,7 +115,6 @@ export function InteractiveMap() {
               onMouseLeave={() => setHoveredLocation(null)}
             >
               {hasIssue ? (
-                // ROUGE : Problème détecté
                 <div className="relative">
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -129,7 +123,6 @@ export function InteractiveMap() {
                   <AlertTriangle className="w-8 h-8 text-red-600 drop-shadow-lg bg-white rounded-full p-0.5" fill="#ef4444" />
                 </div>
               ) : (
-                // VERT : Tout va bien
                 <CheckCircle className="w-8 h-8 text-[#2D5A27] drop-shadow-lg bg-white rounded-full p-0.5" fill="#22c55e" />
               )}
               
