@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Button } from "./ui/button";
-import { ArrowRight, BellRing } from "lucide-react"; // Ajout d'une icône pour notifier
+import { ArrowRight } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { toast } from "sonner"; // Pour une notification visuelle popup
 
 interface Incident {
   id: string;
@@ -41,8 +40,7 @@ export function IncidentFeed({
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fonction de chargement des données (extraite pour être réutilisée)
-  const fetchIncidents = async () => {
+  async function fetchIncidents() {
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
@@ -60,7 +58,7 @@ export function IncidentFeed({
         priority: item.priority,
         description: item.description,
         status: item.status,
-        timestamp: new Date(item.created_at).toLocaleDateString() + ' ' + new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date(item.created_at).toLocaleDateString(),
         image: item.image_url || "https://placehold.co/600x400?text=No+Image",
         reportedBy: item.reported_by || "Staff",
         detailedDescription: item.detailed_description || item.description
@@ -68,36 +66,26 @@ export function IncidentFeed({
       setIncidents(formattedData);
     }
     setLoading(false);
-  };
+  }
 
   useEffect(() => {
-    // 1. Chargement initial
     fetchIncidents();
 
-    // 2. Abonnement aux changements temps réel (INSERT, UPDATE, DELETE)
     const channel = supabase
-      .channel('realtime-incidents')
+      .channel('feed-updates')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'incidents' },
-        (payload) => {
-          console.log('Changement détecté:', payload);
-          
-          // Si c'est un nouvel incident, on peut afficher une petite notif
-          if (payload.eventType === 'INSERT') {
-             toast.message("Nouvel incident signalé !", {
-               description: "Le flux a été mis à jour.",
-               icon: <BellRing className="w-4 h-4 text-red-500" />
-             });
-          }
-
-          // On recharge la liste
+        {
+          event: '*',
+          schema: 'public',
+          table: 'incidents',
+        },
+        () => {
           fetchIncidents();
         }
       )
       .subscribe();
 
-    // Nettoyage de l'abonnement quand le composant est détruit
     return () => {
       supabase.removeChannel(channel);
     };
@@ -106,15 +94,9 @@ export function IncidentFeed({
   if (loading) return <div className="p-6 text-center text-slate-500">Chargement...</div>;
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-6 h-full flex flex-col">
+    <div className="bg-white rounded-lg border border-slate-200 p-6 h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-slate-800 font-semibold flex items-center gap-2">
-          Incidents en cours
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-        </h3>
+        <h3 className="text-slate-800">Incidents en cours</h3>
         <Button
           onClick={onViewAll}
           variant="ghost"
@@ -126,7 +108,7 @@ export function IncidentFeed({
         </Button>
       </div>
 
-      <div className="space-y-4 overflow-y-auto flex-1 pr-2 custom-scrollbar">
+      <div className="space-y-4 overflow-y-auto max-h-[600px]">
         {incidents.length === 0 && (
           <div className="text-center py-8">
              <p className="text-slate-500 mb-2">Tout est calme ! 🌿</p>
@@ -138,7 +120,7 @@ export function IncidentFeed({
           <div
             key={incident.id}
             onClick={() => onIncidentClick(incident)}
-            className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer bg-white hover:border-[#2D5A27]/30 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div className="flex gap-4">
               <div className="flex-shrink-0">
